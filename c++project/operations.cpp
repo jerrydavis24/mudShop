@@ -55,7 +55,7 @@ void gameLoop(Room rooms[], Item items[], int startingRoomId)
     memset(inventory, -1, MAX_INVENTORY_SIZE * sizeof(int));
 
     
-    while (true)
+    while (true)//gameLoop is a while loop
     {
         // Print the current room details
         printf("%d : %s\n", rooms[currentRoomId].id, rooms[currentRoomId].name);
@@ -98,9 +98,10 @@ void gameLoop(Room rooms[], Item items[], int startingRoomId)
             printf("[e]ast");
         }
 
-        printf(", [l]ook, [g]et, [i]nventory, [d]rop, [q]uit ]\n");
+        printf(", [l]ook, [g]et, [i]nventory, [d]rop, [sh]op, [q]uit ]\n");
         printf("> ");
 
+        
         // Read user command
         if (fgets(command, sizeof(command), stdin) == NULL)
         {
@@ -108,7 +109,7 @@ void gameLoop(Room rooms[], Item items[], int startingRoomId)
             continue; // Optionally handle errors or exit
         }
 
-        // Remove newline character from input
+        // Remove newline character from input and signify the end of the command string
         command[strcspn(command, "\n")] = '\0';
 
         // Handle user command
@@ -128,17 +129,21 @@ void gameLoop(Room rooms[], Item items[], int startingRoomId)
         {
             currentRoomId = rooms[currentRoomId].east;
         }
-        else if (strcmp(command, "l") == 0 && rooms[currentRoomId].item != -1)
+        else if (strcmp(command, "l") == 0)
         {
-            Item currentItem = items[rooms[currentRoomId].item];
-            printf("You see a %s: %s\n", currentItem.name, currentItem.description);
+            if(rooms[currentRoomId].item != -1) {
+                Item currentItem= items[rooms[currentRoomId].item];
+                printf("You see a %s: %s\n", currentItem.name, currentItem.description);
+            } else {
+                printf("There is no item in here.\n");
+            }
         }
         else if ((strcmp(command, "g") == 0 || strcmp(command, "get") == 0) && rooms[currentRoomId].item != -1)
         {
             // Add item to inventory
             if (inventorySize < MAX_INVENTORY_SIZE)
             {
-                inventory[inventorySize++] = rooms[currentRoomId].item;
+                inventory[inventorySize++] = rooms[currentRoomId].item;//please note inventory[inventorySize++] puts the first item picked up into index 0 THEN increments
                 printf("You picked up a %s and put it in your backpack\n", items[rooms[currentRoomId].item].name);
                 rooms[currentRoomId].item = -1; // Remove item from the room)
             }
@@ -179,8 +184,7 @@ void gameLoop(Room rooms[], Item items[], int startingRoomId)
                 if (scanf("%d", &dropId) != 1)
                 {
                     printf("Invalid input.\n");
-                    while (getchar() != '\n')
-                        ;
+                    while (getchar() != '\n');
                     continue;
                 }
                 int found = 0;
@@ -188,10 +192,10 @@ void gameLoop(Room rooms[], Item items[], int startingRoomId)
                 {
                     if (inventory[i] == dropId)
                     {
-                        rooms[currentRoomId].item = dropId;
+                        rooms[currentRoomId].item = dropId;//this puts the item in the given index of your inventory into the room you drop it in, it overwrites what was already in that room if there was something in there
                         printf("You dropped the [%d] %s.\n", items[dropId].id, items[dropId].name);
 
-                        for (int x = i; x < inventorySize - 1; x++)
+                        for (int x = i; x < inventorySize - 1; x++)//this for loop is meant to remove the item from inventory, on the deletion of the last item the for loop doesnt execute then we just subtract from the size of the inventory
                         {
                             inventory[x] = inventory[x + 1];
                         }
@@ -200,12 +204,12 @@ void gameLoop(Room rooms[], Item items[], int startingRoomId)
                         break;
                     }
                 }
-                if (!found)
+                if (found==0)
                 {
                     printf("Item not found in your backpack.\n");
                 }
             }
-            while (getchar() != '\n');
+            while (getchar() != '\n');//clear leftover input from stdin after
         }
         else if (strcmp(command, "sh") == 0 || strcmp(command, "shop") == 0){
             printf("Youre in the shop\n");

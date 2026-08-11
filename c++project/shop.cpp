@@ -8,7 +8,9 @@
 #include <cctype>
 #define MAX_INVENTORY_SIZE 5000
 
+
 using namespace std;
+int itemCount= 0;//I made access to this global so Shop and addShopItem coud share access
 
 std::string to_lower(const std::string &str)
 {
@@ -20,11 +22,12 @@ std::string to_lower(const std::string &str)
     return lowerStr;
 }
 
-Shop::Shop(Item *item_list, ItemType objtype)
+Shop::Shop(Item *item_list, ItemType objtype)//this populates the shop
 {
     int i;
     head = nullptr;
     tail = nullptr;
+   
     // iterate and make sure we are not at the last
     for (i = 0; item_list[i].last != 1; i++)
     {
@@ -34,22 +37,25 @@ Shop::Shop(Item *item_list, ItemType objtype)
 
             // then call addShopItem with the items list index
             addShopItem(item_list[i]);
+            itemCount++;
         }
         // if we are at the last item in the list then stop this
-        if (item_list[i].last == true)
-        {
+        //if (item_list[i].last == true)
+        //{
 
-            break;
-        }
+            //break;
+        //}
     }
     // edge case for the very last item in the case because the loop is checking if last is not true
     addShopItem(item_list[i]);
+    printf("number of weapons in the shop is %d\n", itemCount);
 }
 
 void Shop::addShopItem(const Item &item)
 {
     // initializing the node with the values we care about
-    ShopItem *newItem = new ShopItem(item.id, item.name, item.damage, item.value);
+    ShopItem *newItem = new ShopItem(item.id, item.name, item.damage, item.value, itemCount);
+    newItem->setIndex(itemCount);
     if (head == nullptr)
     {
         // cout << "Setting head and tail to new item." << endl;
@@ -72,11 +78,13 @@ void Shop::enter(int inventory[], int &inventoryCount)
     char command[10];
     bool inShop = true;
     std::string searchTerm = "";
-    ShopItem *currentPageStart = head; // the head of the list is initializied to the nextItemToShow
+    ShopItem *currentPageStart = head;// head is a Shop attribute so it will always refer to the first index of the Shop!
     ShopItem *currentListStart = nullptr;
+
     while (inShop)
     {
-        currentListStart = currentPageStart;
+
+        currentListStart = currentPageStart;//currentPageStart is a pointer and therefore the value it points to can change
         listItems(currentPageStart, searchTerm);
 
         printf("Press n to go forward, 'p' to go back, 'b' to buy, 's' to search, 'r' to reset list, or 'e' to exit: \n");
@@ -85,7 +93,7 @@ void Shop::enter(int inventory[], int &inventoryCount)
         {
             printf("Error reading input.\n");
         }
-        command[strcspn(command, "\n")] = '\0';
+        command[strcspn(command, "\n")] = '\0';//changes the endline terminater in command with the end string
 
         if (strcmp(command, "b") == 0)
         {
@@ -100,20 +108,13 @@ void Shop::enter(int inventory[], int &inventoryCount)
             {
                 currentPageStart = currentListStart;
             }
-            if (removedItem == head)
-            {
-                head = removedItem->getNext();
-                if (head != nullptr)
-                {
-                    head->setPrev(nullptr);
-                }
-            }
         }
 
         else if (strcmp(command, "e") == 0)
         {
             printf("Exiting..... \n");
             inShop = false;
+            break;
         }
 
         else if (strcmp(command, "n") == 0) //
@@ -137,6 +138,7 @@ void Shop::enter(int inventory[], int &inventoryCount)
             }
             if (temp == nullptr)
             {
+                printf("you have tried to go backwards at the start of the list!\n");
                 currentPageStart = head;
             }
             else
@@ -153,6 +155,9 @@ void Shop::enter(int inventory[], int &inventoryCount)
                 searchTerm = command;
                 currentPageStart = head;
             }
+        } else if (strcmp(command, "r") == 0) {
+            currentPageStart= head;
+            searchTerm= "";
         }
     }
 }
@@ -160,7 +165,7 @@ void Shop::enter(int inventory[], int &inventoryCount)
 ShopItem *Shop::listItems(ShopItem *start, const std::string &searchTerm) const // we start this loop with the head bx nextItemToShow was initialized to head
 {
     ShopItem *current = start;
-    int itemNumber = 1;
+    //int itemNumber = 1;
     int itemsShown = 0;
     //printf("Listing items: starting from %p\n", (void *)start);
 
@@ -172,16 +177,16 @@ ShopItem *Shop::listItems(ShopItem *start, const std::string &searchTerm) const 
     while (current != nullptr && itemsShown < 10)
     {
         std::string lowerItemName = to_lower(current->getName());
-        if (lowerSearchTerm.empty() || lowerItemName.find(lowerSearchTerm) != std::string::npos)
+        if (lowerSearchTerm.empty() || lowerItemName.find(lowerSearchTerm) != std::string::npos)//if we arent searching or if the lowerItemName contains the value we are searching for
         {
-        cout << left << setw(7) << itemNumber
+        cout << left << setw(7) << current->getShopIndex() + 1
              << setw(40) << current->getName()
              << setw(10) << current->getDamage()
              << setw(5) << current->getValue() << endl;
 
         //printf("%-7d%-20p\n", itemNumber, (void *)current);
 
-        itemNumber++;
+        //itemNumber++;
         itemsShown++;
         }
         current = current->getNext();
@@ -207,13 +212,14 @@ ShopItem *Shop::buyItem(ShopItem *pageStart, int inventory[], int &inventoryCoun
     }
 
     ShopItem *temp = pageStart;
-    int currentShopItemNumber = 1;
+    //temp->getShopIndex();
+    //int currentShopItemNumber = 1;
 
     // Navigate to the desired item
-    while (temp != nullptr && currentShopItemNumber < shopItemNumber)
+    while (temp != nullptr && temp->getShopIndex() + 1 != shopItemNumber)
     {
         temp = temp->getNext();
-        currentShopItemNumber++;
+        //currentShopItemNumber++;
     }
 
     // If the item number is invalid, return nullptr
@@ -234,16 +240,7 @@ ShopItem *Shop::buyItem(ShopItem *pageStart, int inventory[], int &inventoryCoun
         printf("After removal, new pageStart: %p\n", (void *)pageStart);
 
         // Handle case when removing the head
-        if (removedItem == head)
-        {
-            head = removedItem->getNext();
-            if (head != nullptr)
-            {
-                head->setPrev(nullptr);
-            }
-            pageStart = head;
-        }
-        else if (removedItem == pageStart)
+        if (removedItem == pageStart)
         {
             pageStart = removedItem->getNext();
         }

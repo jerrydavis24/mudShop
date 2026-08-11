@@ -7,11 +7,12 @@ using namespace std;
 
 class ShopItem
 {
-private:
+private: // private means that these variables belong to the ShopItem object, but code outside the ShopItem class cannot directly access them
     int id;
     string name;
     int damage;
     int value;
+    int shopIndex;
     ShopItem *next;
     ShopItem *prev;
 public:
@@ -20,13 +21,17 @@ public:
         next = nullptr;
         prev = nullptr;
     }
-    ShopItem(const int& id, const string& name, const int& damage, const int& value)
-        : id(id), name(name), damage(damage), value(value) {
+    ShopItem(const int& id, const string& name, const int& damage, const int& value, const int& shopIndex)
+        : id(id), name(name), damage(damage), value(value), shopIndex(shopIndex) {
             next = nullptr;
             prev = nullptr;
         };
 
         //Getters
+        int getShopIndex(){
+            return shopIndex;
+        }
+
         string getName(){
             return name;
         }
@@ -47,6 +52,10 @@ public:
         }
 
         //Setters
+        void setIndex(int indexNum){
+            shopIndex= indexNum;
+        }
+
         void setNext(ShopItem * itemN){//N for node
             next = itemN;
         }
@@ -60,6 +69,7 @@ class Shop
 private:
     ShopItem* head;
     ShopItem* tail;
+    int itemCount;
 
     void setHead(ShopItem* newHead){
         head = newHead;
